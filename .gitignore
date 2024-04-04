@@ -1,0 +1,6 @@
+build
+sound_maker.exe
+sound_maker.ilk
+sound_maker.pdb
+.cache/
+compile_commands.json
