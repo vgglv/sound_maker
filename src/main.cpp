@@ -2,11 +2,9 @@
 #include <string.h>
 #include <windows.h>
 #include <mmsystem.h>
-#include <cmath>
 #include <assert.h>
 #include <string>
 #include <winuser.h>
-#include <tchar.h>
 
 namespace {
 	UINT timer_id;
@@ -17,7 +15,11 @@ namespace {
 }
 
 #define IDC_BUTTON 1234
+#define IDC_CLOSE 1235
+
 NOTIFYICONDATA nid;
+HMENU hMenu;
+
 bool createTimer();
 LRESULT CALLBACK EditProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -35,6 +37,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 			case WM_LBUTTONDOWN:
 			{
 				ShowWindow(main_window_hwnd, SW_SHOW);
+				break;
+			}
+			case WM_RBUTTONUP:
+			{
+				POINT pt;
+				GetCursorPos(&pt);
+				TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
 				break;
 			}
 		}
@@ -63,6 +72,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 				button_name = "ON";
 			}
 			SendMessage(button_hwnd, WM_SETTEXT, 0, (LPARAM)button_name.data());
+			break;
+		}
+		case IDC_CLOSE:
+		{
+			DestroyWindow(main_window_hwnd);
 			break;
 		}
 		default:
@@ -216,15 +230,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 	nid.cbSize = sizeof(NOTIFYICONDATA);
 	nid.hWnd = main_window_hwnd;
 	nid.uID = 1;
-	nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+	nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP;
 	nid.uCallbackMessage = WM_USER + 1;
 	nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	strcpy_s(nid.szTip, "Sound master");
+
 	Shell_NotifyIcon(NIM_ADD, &nid);
+
+	hMenu = CreatePopupMenu();
+	AppendMenu(hMenu, MF_STRING, IDC_CLOSE, "Close");
 
 	assert(main_window_hwnd != NULL && "hwnd is null");
 
 	ShowWindow(main_window_hwnd, nCmdShow);
+	UpdateWindow(main_window_hwnd);
 
 	MSG msg = {};
 	while (GetMessage(&msg, NULL, 0, 0) > 0) {
